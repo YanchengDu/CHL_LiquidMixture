@@ -29,7 +29,7 @@ Jupyter notebooks for each paper section can be found as follows:
 |---|---|---|
 | `chi` | Flory-Huggins interaction matrix (nc x nc) | user-defined |
 | `kappa` | Gradient-penalty (interfacial energy) coefficient per component | 5.0 |
-| `M` | Per-component mobility | user-defined |
+| `M` | Per-component mobility | 1.0 |
 | `r_stab` | Stabilization constant in the semi-implicit update; damps instability from strongly negative curvature in `chi` (larger = more stable, slower) | 2.0 |
 | `dt` / `dt_min` / `dt_max` | Initial / floor / ceiling on the adaptive time step | 0.05 / 1e-6 / `dt` |
 | `max_steps` | Max accepted steps before giving up | 2×10^5 |
