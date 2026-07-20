@@ -12,28 +12,7 @@ Jupyter notebooks for each paper section can be found as follows:
 
 ## Key simulation parameters
 
-### Spatial (Model B / Cahn-Hilliard) dynamics — `run_cahn_hilliard_multi_FH_rstab_jax_until_converged` (`Dynamics/Spatial_Cahn_Hilliard.py`)
-
-| Parameter | Description | Default | Used in paper (spatial sims) |
-|---|---|---|---|
-| `chi` | Flory-Huggins interaction matrix (nc x nc) | zeros | — |
-| `kappa` | Gradient-penalty (interfacial energy) coefficient per component | ones | — |
-| `M` | Per-component mobility | ones | — |
-| `r_stab` | Stabilization constant in the semi-implicit update; damps instability from strongly negative curvature in `chi` (larger = more stable, slower) | `max(\|chi\|) + 1` | 2.0 |
-| `dt` / `dt_min` / `dt_max` | Initial / floor / ceiling on the adaptive time step | 0.05 / 1e-6 / `dt` | — |
-| `max_steps` | Max accepted steps before giving up | 500000 | 2×10^5 |
-| `max_time` | Max simulated time before giving up | 500.0 | — |
-| `field_tol` | Convergence: stop once the relative per-step field change drops below this | 1e-6 | 1e-6 |
-| `energy_slope_tol` | Convergence: stop once the normalized energy-decrease rate drops below this fraction of the max observed slope | 1e-7 | — |
-| `raw_mass_tol` | Reject step if the raw (pre-projection) field's per-pixel mass sum deviates from 1 by more than this | 1e-5 | — |
-| `raw_min_tol` | Reject step if the raw field dips below this value | -1e-6 | — |
-| `mean_tol` | Reject step if a component's spatial mean drifts from the conserved global mean by more than this | 1e-5 | — |
-| `energy_increase_tol` | Reject step if the free energy increases by more than this | 1e-6 | — |
-| `window` | Number of recent steps used to estimate the energy slope | 20 | — |
-| `min_steps_check` | Steps before convergence criteria start being checked | 1000 | — |
-| `grow_dt` | Multiplicative growth factor applied to `dt` after each accepted step | 1.05 | — |
-
-### Non-spatial (single-compartment, Model A) dynamics — `forward_sim_x_ssolvent_clamp` (`Dynamics/Model_A.py`)
+### Model A (non-spatial, single-compartment) dynamics — `forward_sim_x_ssolvent_clamp` (`Dynamics/Model_A.py`)
 
 | Parameter | Description | Used in paper (classifier/IO sims) |
 |---|---|---|
@@ -43,7 +22,27 @@ Jupyter notebooks for each paper section can be found as follows:
 | `t_end` | Total integration time | 300.0 |
 | `dt` | Initial step size passed to the Dopri5 adaptive solver | 1e-1 |
 | `max_steps` | Max solver steps allowed before diffrax raises an error | 30000 |
-| `mobility` | `"dphi"` (phi-weighted mobility) vs. any other value (constant mobility) | `"dphi"` (default) |
+
+### Model B (spatial, Cahn-Hilliard) dynamics — `run_cahn_hilliard_multi_FH_rstab_jax_until_converged` (`Dynamics/Spatial_Cahn_Hilliard.py`)
+
+| Parameter | Description | Used in paper (spatial sims) |
+|---|---|---|
+| `chi` | Flory-Huggins interaction matrix (nc x nc) | user-defined |
+| `kappa` | Gradient-penalty (interfacial energy) coefficient per component | 5.0 |
+| `M` | Per-component mobility | user-defined |
+| `r_stab` | Stabilization constant in the semi-implicit update; damps instability from strongly negative curvature in `chi` (larger = more stable, slower) | 2.0 |
+| `dt` / `dt_min` / `dt_max` | Initial / floor / ceiling on the adaptive time step | 0.05 / 1e-6 / `dt` |
+| `max_steps` | Max accepted steps before giving up | 2×10^5 |
+| `max_time` | Max simulated time before giving up | 500.0 |
+| `field_tol` | Convergence: stop once the relative per-step field change drops below this | 1e-6 |
+| `energy_slope_tol` | Convergence: stop once the normalized energy-decrease rate drops below this fraction of the max observed slope | 1e-7 |
+| `raw_mass_tol` | Reject step if the raw (pre-projection) field's per-pixel mass sum deviates from 1 by more than this | 1e-5 |
+| `raw_min_tol` | Reject step if the raw field dips below this value | -1e-6 |
+| `mean_tol` | Reject step if a component's spatial mean drifts from the conserved global mean by more than this | 1e-5 |
+| `energy_increase_tol` | Reject step if the free energy increases by more than this | 1e-6 |
+| `window` | Number of recent steps used to estimate the energy slope | 20 |
+| `min_steps_check` | Steps before convergence criteria start being checked | 1000 |
+| `grow_dt` | Multiplicative growth factor applied to `dt` after each accepted step | 1.05 |
 
 Please contact duyc190@caltech.edu for questions
 
