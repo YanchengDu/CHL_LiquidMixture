@@ -234,8 +234,126 @@ def run_cahn_hilliard_multi_FH_rstab_jax_until_converged(
 ):
     """Run Cahn-Hilliard dynamics until convergence (r-stabilized semi-implicit).
 
+    Integrates the multicomponent Cahn-Hilliard (Model B) equations with an
+    r-stabilized semi-implicit spectral scheme, adaptively shrinking/growing
+    dt, until a convergence criterion is met or a step/time limit is hit.
+
     When `training=True` skips frame saving and returns only the final phi array.
     Otherwise returns (frames, phi, mean_phi_global, energies, steps_saved, time_saved).
+
+    Parameters
+    ----------
+    nc, nx, ny : int
+        Number of components and spatial grid size.
+    dx, dy : float
+        Grid spacing.
+    M : (nc,) array or None
+        Per-component mobility. Defaults to all ones.
+    kappa : (nc,) array or None
+        Per-component gradient-penalty (interfacial energy) coefficient.
+        Defaults to all ones.
+    chi : (nc, nc) array or None
+        Flory-Huggins interaction matrix. Defaults to zeros.
+    nu : (nc,) array or None
+        Optional per-component chemical-potential offset.
+    dt : float
+        Initial time step (adaptive; grown/shrunk during the run).
+    mean_phi : (nc,) array
+        Target per-component mean composition, used for the initial
+        condition (if `initial_phi` is None) and as the conserved reference
+        for the `mean_tol` check.
+    initial_phi : (nc, nx, ny) array or None
+        Starting composition field. If None, one is generated with
+        `init_phi_multi_jax` using `mean_phi`, `noise_amp`, `seed`, and
+        `sigma_spatial`.
+    noise_amp : float
+        Amplitude of noise added around `mean_phi` when generating a random
+        initial condition (only used if `initial_phi` is None).
+    save_interval : int
+        Number of accepted steps between saved frames (only when
+        `training=False`).
+    seed : int or None
+        RNG seed for the random initial condition.
+    verbose : bool
+        If True, print progress (time, dt, rel_change, mass/energy
+        diagnostics) every `save_interval` steps.
+    track_energy : bool
+        Whether to compute the free energy each step. Required for the
+        energy-increase rejection check and the energy-slope convergence
+        check.
+    training : bool
+        If True, skip frame/energy recording and return only the final phi
+        array (faster, used inside the training loop). If False, return the
+        full history.
+    r_stab : float or None
+        Stabilization constant added to the linear term of the semi-implicit
+        update. It damps numerical instability that arises when `chi` has
+        strongly negative curvature (near-spinodal regions): larger values
+        are more stable but converge more slowly. If None, defaults to
+        `max(|chi|) + 1`. In the spatial simulations reported in the paper,
+        we used r_stab=2.0.
+    max_steps : int
+        Maximum number of accepted steps before giving up. In the spatial
+        simulations reported in the paper, we used max_steps=2e5.
+    max_time : float
+        Maximum simulated (physical) time before giving up.
+    dt_min : float
+        If the adaptive dt shrinks below this (from repeated step
+        rejections), the run aborts as non-converged/unstable.
+    dt_max : float or None
+        Ceiling on the adaptive time step. Defaults to the initial `dt`.
+    energy_increase_tol : float
+        A step is rejected if the free energy increases by more than this
+        (should be ~0; only allows for numerical noise).
+    mean_tol : float
+        A step is rejected if any component's spatial mean drifts from the
+        conserved global mean (`mean_phi_global`) by more than this.
+    raw_mass_tol : float
+        A step is rejected if the per-pixel sum of the raw (pre-projection)
+        field deviates from 1 by more than this. Catches mass-conservation
+        violations before the simplex projection clips/renormalizes them.
+    raw_min_tol : float
+        A step is rejected if the raw (pre-projection) field dips below this
+        value (a small negative number, allowing for tiny numerical
+        undershoot). Catches blow-up/instability before projection.
+    field_tol : float
+        Convergence is declared once the relative per-unit-time change in
+        phi (`rel_change`) drops below this. In the spatial simulations
+        reported in the paper, we used field_tol=1e-6.
+    energy_slope_tol : float
+        Convergence is declared once the (normalized) energy-decrease rate
+        drops below this fraction of the maximum slope observed so far.
+        Only used when `track_energy=True`.
+    window : int
+        Number of recent accepted steps used to estimate the energy slope
+        for the `energy_slope_tol` convergence check.
+    min_steps_check : int
+        Convergence criteria are not evaluated until at least this many
+        steps have been accepted, to avoid false positives early in the run.
+    grow_dt : float
+        Multiplicative factor applied to dt after each accepted step
+        (adaptive step-size growth rate).
+    sigma_spatial : float
+        Spatial smoothing lengthscale used when generating a random initial
+        condition (only used if `initial_phi` is None).
+
+    Returns
+    -------
+    frames : (n_saved, nc, nx, ny) ndarray
+        Saved composition fields (only when `training=False`).
+    phi : (nc, nx, ny) ndarray
+        Final composition field.
+    mean_phi_global : (nc,) ndarray
+        Target per-component mean composition used for the mass-conservation
+        check.
+    energies : (n_saved,) ndarray or None
+        Free energy at each saved frame (only when `training=False` and
+        `track_energy=True`).
+    steps_saved : (n_saved,) ndarray
+        Accepted-step index of each saved frame (only when `training=False`).
+    time_saved : (n_saved,) ndarray or None
+        Simulated time at each saved frame (only when `training=False` and
+        `track_energy=True`).
     """
     if M is None:
         M = jnp.ones(nc, dtype=jnp.float64)
