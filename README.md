@@ -36,13 +36,6 @@ Jupyter notebooks for each paper section can be found as follows:
 | `max_time` | Max simulated time before giving up | 500.0 |
 | `field_tol` | Convergence: stop once the relative per-step field change drops below this | 1e-6 |
 | `energy_slope_tol` | Convergence: stop once the normalized energy-decrease rate drops below this fraction of the max observed slope | 1e-7 |
-| `raw_mass_tol` | Reject step if the raw (pre-projection) field's per-pixel mass sum deviates from 1 by more than this | 1e-5 |
-| `raw_min_tol` | Reject step if the raw field dips below this value | -1e-6 |
-| `mean_tol` | Reject step if a component's spatial mean drifts from the conserved global mean by more than this | 1e-5 |
-| `energy_increase_tol` | Reject step if the free energy increases by more than this | 1e-6 |
-| `window` | Number of recent steps used to estimate the energy slope | 20 |
-| `min_steps_check` | Steps before convergence criteria start being checked | 1000 |
-| `grow_dt` | Multiplicative growth factor applied to `dt` after each accepted step | 1.05 |
 
 Please contact duyc190@caltech.edu for questions
 
